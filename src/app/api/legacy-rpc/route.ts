@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
           ok: true,
           version: Date.now(),
           selection: { businessDate: new Date().toISOString().split('T')[0], site: 'SORA' },
+          sites: ['SORA', 'HAEUNDAE', 'ANNEX'],
           rooms,
           orders: [],
           performance: { elapsedMs: 10 }
