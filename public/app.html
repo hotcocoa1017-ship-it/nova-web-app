@@ -1,7 +1,37 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<script>window.google={script:{run:new Proxy({},{get:(t,p)=>{if(p==="withSuccessHandler"||p==="withFailureHandler")return undefined;const chain=function(...args){fetch("/api/legacy-rpc",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({func:p,args})}).then(r=>r.json()).then(d=>{if(d.ok&&chain._s)chain._s(d.result);else if(!d.ok&&chain._f)chain._f(new Error(d.error))}).catch(e=>{if(chain._f)chain._f(e);else console.error(e)})};chain.withSuccessHandler=function(cb){chain._s=cb;return chain;};chain.withFailureHandler=function(cb){chain._f=cb;return chain;};return chain;}})}};</script>
+
+<script>
+  const createRunner = (handlers) => {
+    return new Proxy({}, {
+      get: function(target, prop) {
+        if (prop === 'withSuccessHandler') return (cb) => createRunner({ ...handlers, success: cb });
+        if (prop === 'withFailureHandler') return (cb) => createRunner({ ...handlers, failure: cb });
+        if (prop === 'withUserObject') return (obj) => createRunner({ ...handlers, userObj: obj });
+        
+        return function(...args) {
+          fetch('/api/legacy-rpc', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ func: prop, args })
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.ok && handlers.success) handlers.success(data.result, handlers.userObj);
+            else if (!data.ok && handlers.failure) handlers.failure(new Error(data.error), handlers.userObj);
+          })
+          .catch(err => {
+            if (handlers.failure) handlers.failure(err, handlers.userObj);
+            else console.error('RPC Error:', err);
+          });
+        };
+      }
+    });
+  };
+  window.google = { script: { run: createRunner({}) } };
+</script>
+
   <base target="_top">
   <meta charset="UTF-8">
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.22/dist/browser-image-compression.js"></script>
