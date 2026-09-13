@@ -170,6 +170,64 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (func === 'getAdminSettingsDataDbFirst') {
+      return NextResponse.json({
+        ok: true,
+        result: {
+          ok: true,
+          operationValues: {},
+          operationDefinitions: [
+            { code: 'DEFAULT_CHECKOUT', label: '기본 퇴실시각', type: 'TIME', options: [] }
+          ],
+          triggers: { departureDelay: true, automaticClose: false, telegramQueue: true },
+          autoClose: { enabled: false, closeTime: '04:00', notifyFailure: true, lastFailure: '' },
+          groups: [
+            { code: '사업장', items: [{ code: 'SORA', value: '쏘라노' }, { code: 'HAEUNDAE', value: '해운대' }] }
+          ]
+        }
+      });
+    }
+
+    if (func === 'getAdminUserAccountRegistrationData') {
+      return NextResponse.json({
+        ok: true,
+        result: {
+          ok: true,
+          defaultSite: 'SORA',
+          sites: ['SORA', 'HAEUNDAE'],
+          users: [
+            { employeeNo: 'ADMIN-01', name: '시스템관리자', role: 'ADMIN', sites: ['SORA', 'HAEUNDAE'] },
+            { employeeNo: 'QM-01', name: 'QM담당자', role: 'QM', sites: ['SORA'] },
+            { employeeNo: '9999', name: '테스트유저', role: 'ROOM_MAID', sites: ['SORA'] }
+          ]
+        }
+      });
+    }
+
+    if (func === 'getTelegramConnectionAdminData') {
+      return NextResponse.json({
+        ok: true,
+        result: {
+          ok: true,
+          token: 'MOCK-TOKEN-1234',
+          connected: 2,
+          total: 10,
+          webhookStatus: '정상',
+          users: []
+        }
+      });
+    }
+
+    if (func === 'getNovaNotificationPreferences') {
+      return NextResponse.json({
+        ok: true,
+        result: {
+          ok: true,
+          preferences: { push: true, telegram: false, urgentOnly: false }
+        }
+      });
+    }
+
     // Default mock
     return NextResponse.json({ 
       ok: true, 
