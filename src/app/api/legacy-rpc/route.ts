@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
             realtimeConfig: {
               ok: true,
               enabled: true,
-              apiBase: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'https://nova-web-app' : 'https://nova-web-app',
+              apiBase: '',
               qmDraftDbFirstEnabled: true
             },
             menu,
