@@ -24,14 +24,24 @@ export async function POST(request: NextRequest) {
 
     if (func === 'loginNovaBootstrap') {
       const [name, employeeNo, clientType, site, isMobile] = args;
-      let role = 'ROOM_MAID';
-      let allowedSites = ['SORA'];
-      
       const empUpper = String(employeeNo).toUpperCase();
-      if (empUpper.startsWith('QM')) role = 'QM';
-      else if (empUpper.startsWith('ADMIN')) role = 'ADMIN'; // Changed from SUPER_ADMIN to ADMIN to match legacy checks
-      else if (empUpper.startsWith('ORDER')) role = 'ORDER';
-      else if (empUpper.startsWith('MGR')) role = 'MANAGER';
+      let role = 'ROOM_MAID';
+      if (empUpper.startsWith('QM') || name === 'QM') role = 'QM';
+      else if (empUpper.startsWith('ADMIN') || name.includes('관리자')) role = 'ADMIN';
+      else if (empUpper.startsWith('ORDER') || name.includes('오더')) role = 'ORDER';
+      else if (empUpper.startsWith('MGR') || name.includes('지배인')) role = 'MANAGER';
+      
+      const pool = getDbPool();
+      if (pool) {
+        const client = await pool.connect();
+        try {
+          const { rows } = await client.query(`SELECT role FROM public.nova_users WHERE employee_no = $1`, [employeeNo]);
+          if (rows[0] && rows[0].role) {
+            role = rows[0].role;
+            if (role === 'SUPER_ADMIN') role = 'ADMIN';
+          }
+        } catch (e) {} finally { client.release(); }
+      }
 
       const user = {
         employeeNo: String(employeeNo),
@@ -39,9 +49,43 @@ export async function POST(request: NextRequest) {
         role: role as any,
         enabled: true,
         defaultSite: 'SORA',
-        allowedSites
+        allowedSites: ['SORA']
       };
       const token = createNovaSessionToken(user);
+
+      const commonMenu = [{ id: 'home', label: '홈' }];
+      const roleMenus: any = {
+        ADMIN: [
+          { id: 'indicator', label: '통합 인디케이터' },
+          { id: 'departure', label: '퇴실지연' },
+          { id: 'monthly', label: '월별조회' },
+          { id: 'roommaidStats', label: '룸메이드 실적' },
+          { id: 'roommaidClose', label: '룸메이드 마감일지' },
+          { id: 'adminMetrics', label: '운영 성과지표' },
+          { id: 'shifts', label: '근무조 관리' },
+          { id: 'qmChecklist', label: 'QM 체크리스트' },
+          { id: 'settings', label: '설정' }
+        ],
+        ORDER: [
+          { id: 'indicator', label: '통합 인디케이터' },
+          { id: 'departure', label: '퇴실지연' },
+          { id: 'monthly', label: '월별조회' },
+          { id: 'roommaidStats', label: '룸메이드 실적' },
+          { id: 'roommaidClose', label: '룸메이드 마감일지' },
+          { id: 'shifts', label: '근무조 관리' },
+          { id: 'qmChecklist', label: 'QM 체크리스트' },
+          { id: 'settings', label: '설정' }
+        ],
+        MANAGER: [
+          { id: 'indicator', label: '통합 인디케이터' },
+          { id: 'settings', label: '설정' }
+        ],
+        QM: [{ id: 'qm', label: 'QM 점검' }, { id: 'settings', label: '설정' }],
+        ROOM_MAID: [{ id: 'cleaning', label: '오늘의 정비' }, { id: 'roommaidStats', label: '내 정비실적' }, { id: 'settings', label: '설정' }]
+      };
+      
+      const menu = commonMenu.concat(roleMenus[role] || roleMenus['ROOM_MAID']);
+      const defaultMenu = role === 'ADMIN' || role === 'ORDER' || role === 'MANAGER' ? 'indicator' : (role === 'QM' ? 'qm' : 'home');
       
       return NextResponse.json({
         ok: true,
@@ -58,12 +102,8 @@ export async function POST(request: NextRequest) {
               apiBase: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'https://nova-web-app' : 'https://nova-web-app',
               qmDraftDbFirstEnabled: true
             },
-            menu: [
-              { id: 'home', label: '홈' },
-              { id: 'qm', label: '품질관리' },
-              { id: 'roommaid', label: '룸메이드' }
-            ],
-            defaultMenu: role === 'QM' ? 'qm' : 'roommaid'
+            menu,
+            defaultMenu
           }
         }
       });
