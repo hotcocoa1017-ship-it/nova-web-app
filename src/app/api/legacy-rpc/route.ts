@@ -39,7 +39,11 @@ export async function POST(request: NextRequest) {
           token,
           bootstrap: {
             ok: true,
-            user: { role: user.role, sessionSite: site || 'SORA' },
+            app: {
+              version: '2.0.0 (Cloud Run)',
+              businessDate: new Date().toISOString().split('T')[0]
+            },
+            user: { role: user.role, sessionSite: site || 'SORA', name: user.name, job: user.role },
             realtimeConfig: {
               ok: true,
               enabled: true,
@@ -53,6 +57,19 @@ export async function POST(request: NextRequest) {
             ],
             defaultMenu: role === 'QM' ? 'qm' : 'home'
           }
+        }
+      });
+    }
+
+    if (func === 'getMobileSnapshot') {
+      return NextResponse.json({
+        ok: true,
+        result: {
+          ok: true,
+          version: 1,
+          rooms: [],
+          orders: [],
+          performance: { elapsedMs: 10 }
         }
       });
     }
