@@ -69,8 +69,12 @@ export type CleaningStatus =
 
 export type CleaningType =
   | 'NORMAL'         // 일반정비 (퇴실정비)
+  | 'MD'
+  | 'SO'
   | 'DS'             // D/S (재실정비)
+  | 'SUITE'
   | 'FIVE_S'         // 5S 특별정비
+  | '5S'
   | 'EVALUATION'     // 평가원 점검 대비
   | 'STAFF_DORM'     // 직원숙소
   | 'DEEP_CLEANING'; // 딥크리닝
